@@ -16,12 +16,58 @@ if ( ! class_exists( "google_places_api" ) ) {
 
 add_action( 'admin_post_wp_locations_save', 'wp_locations_save' );
 
+add_shortcode( 'wp_location_hours', 'wp_location_hours_shortcode' );
+add_shortcode( 'wp_location_hours_long', 'wp_location_hours_long_shortcode' );
+add_shortcode( 'wp_location_hours_short', 'wp_location_hours_short_shortcode' );
+add_shortcode( 'wp_location_hours_today', 'wp_location_hours_today_shortcode' );
+
 function wp_locations_view() {
   try {
     require_once( "pages/wp-locations-view.php" );
   } catch ( Exception $e ) {
     var_dump( $e );
   }
+}
+
+function get_wp_location_by_id( $id ) {
+  global $wpdb;
+  $locationRow           = $wpdb->get_row( "Select * from " . $wpdb->prefix . WP_LOCATION_TABLE . " where id = " . $id . " LIMIT 1", ARRAY_A );
+  $location              = new wp_location();
+  $location->id          = $locationRow["id"];
+  $location->place_id    = $locationRow["place_id"];
+  $location->alt_ids     = $locationRow["alt_ids"];
+  $location->name        = $locationRow["name"];
+  $location->latitude    = $locationRow["latitude"];
+  $location->longitude   = $locationRow["longitude"];
+  $location->address1    = $locationRow["address1"];
+  $location->address2    = $locationRow["address2"];
+  $location->city        = $locationRow["city"];
+  $location->province    = $locationRow["province"];
+  $location->country     = $locationRow["country"];
+  $location->postal_code = $locationRow["postal_code"];
+
+  return $location;
+}
+
+function get_wp_location_by_name( $name ) {
+  global $wpdb;
+  $sql                   = $wpdb->prepare( "Select * from " . $wpdb->prefix . WP_LOCATION_TABLE . " where name = %s LIMIT 1", $name );
+  $locationRow           = $wpdb->get_row( $sql, ARRAY_A );
+  $location              = new wp_location();
+  $location->id          = $locationRow["id"];
+  $location->place_id    = $locationRow["place_id"];
+  $location->alt_ids     = $locationRow["alt_ids"];
+  $location->name        = $locationRow["name"];
+  $location->latitude    = $locationRow["latitude"];
+  $location->longitude   = $locationRow["longitude"];
+  $location->address1    = $locationRow["address1"];
+  $location->address2    = $locationRow["address2"];
+  $location->city        = $locationRow["city"];
+  $location->province    = $locationRow["province"];
+  $location->country     = $locationRow["country"];
+  $location->postal_code = $locationRow["postal_code"];
+
+  return $location;
 }
 
 function wp_locations_add() {
@@ -162,4 +208,188 @@ function wp_locations_save_failure() {
 // function to geocode address, it will return NULL if unable to geocode address
 function wp_location_geocode( $address ) {
   return google_places_api::geocode( $address );
+}
+
+
+function wp_location_hours_shortcode( $atts = [] ) {
+  if ( empty( $atts ) ) {
+    // should throw exception
+    return;
+  }
+
+  // include the styling for this plugin
+  wp_enqueue_style( "wp-location-css", plugins_url( "wp-location/css/wp_location.css" ) );
+
+  $location = null;
+  if ( array_key_exists( "name", $atts ) ) {
+    // Load location by Name
+    $location = get_wp_location_by_name( $atts["name"] );
+  } elseif ( array_key_exists( "id", $atts ) ) {
+    // load location by Id
+    $location = get_wp_location_by_id( $atts['id'] );
+  } else {
+    // throw exception
+    return;
+  }
+
+  if ( empty( $location ) || empty( $location->place_id ) ) {
+    return;
+  }
+
+  $defaulted_atts = shortcode_atts( array(
+    "type"  => "long",
+    "style" => "",
+    "class" => ""
+  ), $atts );
+
+  $style = $defaulted_atts["style"];
+  $class = $defaulted_atts["class"];
+
+
+  $hours = google_places_api::get_place_hours( $location->place_id );
+  if ( empty( $hours ) ) {
+    ob_start();
+    try {
+      ?>
+        <div class="wp-location-hours-container">
+            <div class="wp-location-hours-status">
+                <p>Failed to Load Open Hours for Location</p>
+            </div>
+        </div>
+      <?php
+      return ob_get_contents();
+    } finally {
+      ob_end_clean();
+    }
+  }
+
+  $html = "";
+  switch ( $defaulted_atts['type'] ) {
+    case 'long':
+      $html = wp_location_hours_display_long( $hours, $class, $style );
+      break;
+    case 'short':
+      $html = wp_location_hours_display_short( $hours, $class, $style );
+      break;
+    case 'today':
+      $html = wp_location_hours_display_today( $hours, $class, $style );
+      break;
+  }
+
+  return $html;
+}
+
+function wp_location_hours_short_shortcode( $atts = [] ) {
+  if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
+    $atts["type"] = "short";
+
+    return wp_location_hours_shortcode( $atts );
+  }
+}
+
+function wp_location_hours_long_shortcode( $atts = [] ) {
+  if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
+    $atts["type"] = "long";
+
+    return wp_location_hours_shortcode( $atts );
+  }
+}
+
+function wp_location_hours_today_shortcode( $atts = [] ) {
+  if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
+    $atts["type"] = "today";
+
+    return wp_location_hours_shortcode( $atts );
+  }
+}
+
+function wp_location_hours_display_long( $hours, $class = "", $style = "" ) {
+  if ( empty( $hours ) ) {
+    return;
+  }
+
+  ob_start();
+  try {
+    ?>
+      <div class="wp-location-hours-container <?php echo $class; ?>" style="<?php echo $style; ?>">
+          <div class="wp-location-hours-status">
+              <p>Doors are: <?php echo( $hours->open_now ? "Open" : "Closed" ); ?></p>
+          </div>
+          <div class='wp-location-hours-table'>
+            <?php
+            foreach ( $hours->weekday_text as $key => $value ) {
+              ?>
+                <div class="wp-location-hours-table-row">
+                    <span class="wp-location-hours-table-column"><?php echo $value; ?></span>
+                </div>
+              <?php
+            }
+            ?>
+          </div>
+      </div>
+    <?php
+    return ob_get_contents();
+  } finally {
+    // no matter what, make sure to kill the output buffering that we started
+    ob_end_clean();
+  }
+}
+
+function wp_location_hours_display_short( $hours, $class = "", $style = "" ) {
+  if ( empty( $hours ) ) {
+    return;
+  }
+
+  // group days by consistent hours
+  $condensed_text = google_places_api::condense_weekday_text( $hours );
+  ob_start();
+  try {
+    ?>
+      <div class="wp-location-hours-container <?php echo $class; ?>" style="<?php echo $style; ?>">
+          <div class="wp-location-hours-status">
+              <p>Doors are: <?php echo( $hours->open_now ? "Open" : "Closed" ); ?></p>
+          </div>
+          <div class='wp-location-hours-table'>
+            <?php
+            foreach ( $condensed_text as $value ) {
+              ?>
+                <div class="wp-location-hours-table-row">
+                    <span class="wp-location-hours-table-column"><?php echo $value; ?></span>
+                </div>
+              <?php
+            }
+            ?>
+          </div>
+      </div>
+    <?php
+    return ob_get_contents();
+  } finally {
+    ob_end_clean();
+  }
+}
+
+function wp_location_hours_display_today( $hours, $class = "", $style = "" ) {
+  if ( empty( $hours ) ) {
+    return;
+  }
+  // because googlePlaces API doesn't understand how to make things the same...
+  $day_conversion_table = array( 0 => 5, 1 => 0, 2 => 1, 3 => 2, 4 => 3, 5 => 4, 6 => 6 );
+  ob_start();
+  try {
+    ?>
+      <div class="wp-location-hours-container <?php echo $class; ?>" style="<?php echo $style; ?>">
+          <div class="wp-location-hours-status">
+              <p>Doors are: <?php echo( $hours->open_now ? "Open" : "Closed" ); ?></p>
+          </div>
+          <div class='wp-location-hours-table'>
+              <div class="wp-location-hours-table-row">
+                  <span class="wp-location-hours-table-column"><?php echo $hours->weekday_text[ $day_conversion_table[ date( 'w' ) ] ] ?></span>
+              </div>
+          </div>
+      </div>
+    <?php
+    return ob_get_contents();
+  } finally {
+    ob_end_clean();
+  }
 }

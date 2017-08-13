@@ -14,22 +14,22 @@
           <input class="widefat" id="googlemaps_api_key" name="googlemaps_api_key" type="text" value="<?php echo get_option('googlemaps_api_key')?>"/>
         </td>
       </tr>
-      <tr>
-          <th scope="row">
-              GoogleMaps Endpoint Url
-          </th>
-          <td>
-              <input class="widefat" id="googlemaps_api_endpoint" name="googlemaps_api_endpoint" type="text" value="<?php echo get_option('googlemaps_api_endpoint')?>"/>
-          </td>
-      </tr>
-      <tr>
-          <th scope="row">
-              GoogleMaps API Version
-          </th>
-          <td>
-              <input class="widefat" id="googlemaps_api_version" name="googlemaps_api_version" type="text" value="<?php echo get_option('googlemaps_api_version')?>"/>
-          </td>
-      </tr>
+<!--      <tr>-->
+<!--          <th scope="row">-->
+<!--              GoogleMaps Endpoint Url-->
+<!--          </th>-->
+<!--          <td>-->
+<!--              <input class="widefat" id="googlemaps_api_endpoint" name="googlemaps_api_endpoint" type="text" value="--><?php //echo get_option('googlemaps_api_endpoint')?><!--"/>-->
+<!--          </td>-->
+<!--      </tr>-->
+<!--      <tr>-->
+<!--          <th scope="row">-->
+<!--              GoogleMaps API Version-->
+<!--          </th>-->
+<!--          <td>-->
+<!--              <input class="widefat" id="googlemaps_api_version" name="googlemaps_api_version" type="text" value="--><?php //echo get_option('googlemaps_api_version')?><!--"/>-->
+<!--          </td>-->
+<!--      </tr>-->
       </tbody>
     </table>
     <?php submit_button(); ?>

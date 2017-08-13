@@ -23,7 +23,7 @@ class google_places_api {
 
 	public static function get_version() {
 		$version = get_option( 'googlemaps_api_version' );
-		return $version;
+		return empty($version) ? '3' : $version;
 	}
 
 	public static function include_js_script() {

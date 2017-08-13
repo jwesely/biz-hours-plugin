@@ -72,10 +72,30 @@ $inputClass = "";
 	<?php settings_errors(); ?>
     <form method="post" action="admin-post.php">
         <input type="hidden" name="action" value="wp_locations_save"/>
-	    <?php wp_nonce_field( 'wp_location_verify' ); ?>
+		<?php wp_nonce_field( 'wp_location_verify' ); ?>
         <fieldset>
             <table class="form-table">
                 <tbody>
+                <tr class="form-field">
+                    <th scope="row">
+                        <label for="location[place_id]">Google Place Id:</label>
+                    </th>
+                    <td>
+                        <input type="text" name="location[place_id]" value="" placeholder=""/>
+                    </td>
+                </tr>
+                <tr class="form-field">
+                    <td colspan="2">
+                        <button type="button" onClick="alert('Feature not Complete');">
+                            <span>Fill Form With Google Place Info</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="form-field form-required">
+                    <td colspan="2">
+                        <span name="blah"><i>Find Place ID at <a href="https://developers.google.com/places/place-id">this</a> location</i></span>
+                    </td>
+                </tr>
                 <tr class="form-field form-required">
                     <th scope="row">
                         <label for="location[name]">Location Name: <span class="description">(required)</span></label>
@@ -132,7 +152,8 @@ $inputClass = "";
                 </tr>
                 <tr class="form-field form-required">
                     <th scope="row">
-                        <label for="location[postal_code]">Postal Code: <span class="description">(required)</span></label>
+                        <label for="location[postal_code]">Postal Code: <span
+                                    class="description">(required)</span></label>
                     </th>
                     <td>
                         <input type="text" name="location[postal_code]" value="" placeholder="68508"/>
@@ -152,19 +173,6 @@ $inputClass = "";
                     </th>
                     <td>
                         <input type="text" name="location[longitude]" value="" placeholder=" -96.680278"/>
-                    </td>
-                </tr>
-                <tr class="form-field">
-                    <th scope="row">
-                        <label for="location[place_id]">Google Place Id:</label>
-                    </th>
-                    <td>
-                        <input type="text" name="location[place_id]" value="" placeholder=""/>
-                    </td>
-                </tr>
-                <tr class="form-field form-required">
-                    <td colspan="2">
-                        <span name="blah"><i>Find Place ID at <a href="https://developers.google.com/places/place-id">this</a> location</i></span>
                     </td>
                 </tr>
                 <tr class="form-field form-required">

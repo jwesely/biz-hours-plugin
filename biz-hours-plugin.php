@@ -28,38 +28,39 @@ register_activation_hook( __FILE__, 'wpLocationInstall' );
 
 // Add Admin Menu Tab
 function wpLocationMenuItem() {
-	// add Store Location Main Menu
-	add_menu_page( 'Store Locations', 'Store Locations', 'manage_options', 'wp-location', 'wp_locations_view' );
+  // add Store Location Main Menu
+  add_menu_page( 'Store Locations', 'Store Locations', 'manage_options', 'wp-location', 'wp_locations_view' );
 
-	// Add "Add Location" SubMenu
-	add_submenu_page(
-		"wp-location",
-		"Add New Location",
-		"Add Location",
-		"manage_options",
-		"wp-location-add",
-		"wp_locations_add"
-	);
-	// add "Edit Location" page, WITHOUT menu Item
-	add_submenu_page(
-		null,
-		"Edit Location",
-		"Edit Location",
-		"manage_options",
-		"wp-location-edit",
-		"wp_locations_edit"
-	);
+  // Add "Add Location" SubMenu
+  add_submenu_page(
+    "wp-location",
+    "Add New Location",
+    "Add Location",
+    "manage_options",
+    "wp-location-add",
+    "wp_locations_add"
+  );
+
+  // add "Edit Location" page, WITHOUT menu Item
+  add_submenu_page(
+    null,
+    "Edit Location",
+    "Edit Location",
+    "manage_options",
+    "wp-location-edit",
+    "wp_locations_edit"
+  );
 }
 
 
 function wpLocationInstall() {
-	global $wpdb;
-	global $wp_location_db_version;
+  global $wpdb;
+  global $wp_location_db_version;
 
-	$table_name      = $wpdb->prefix . WP_LOCATION_TABLE;
-	$charset_collate = $wpdb->get_charset_collate();
+  $table_name      = $wpdb->prefix . WP_LOCATION_TABLE;
+  $charset_collate = $wpdb->get_charset_collate();
 
-	$sql = "CREATE TABLE $table_name (
+  $sql = "CREATE TABLE $table_name (
 	id INT(10) NOT NULL AUTO_INCREMENT,
 	place_id TEXT NULL,
 	alt_ids TEXT NULL,
@@ -78,10 +79,10 @@ function wpLocationInstall() {
 ) $charset_collate;
 ";
 
-	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-	dbDelta( $sql );
-	add_option( 'wp_location_db_version', $wp_location_db_version );
-	flush_rewrite_rules();
+  require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+  dbDelta( $sql );
+  add_option( 'wp_location_db_version', $wp_location_db_version );
+  flush_rewrite_rules();
 }
 
 

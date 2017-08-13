@@ -35,6 +35,14 @@ function biz_hours_plugin_settings_page_save_options(){
   if ( isset( $_POST['googlemaps_api_key'] ) ){
     update_option( 'googlemaps_api_key', $_POST['googlemaps_api_key'] );
   }
+
+  if ( isset( $_POST['googlemaps_api_endpoint'] ) ){
+    update_option( 'googlemaps_api_endpoint', $_POST['googlemaps_api_endpoint'] );
+  }
+
+  if ( isset( $_POST['googlemaps_api_version'] ) ){
+    update_option( 'googlemaps_api_version', $_POST['googlemaps_api_version'] );
+  }
 }
 
 function biz_hours_plugin_user_can_save( $action, $nonce ) {

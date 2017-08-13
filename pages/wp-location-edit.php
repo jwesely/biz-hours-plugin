@@ -91,6 +91,27 @@ $inputClass = "";
         <fieldset>
             <table class="form-table">
                 <tbody>
+                <tr class="form-field">
+                    <th scope="row">
+                        <label for="location[place_id]">Google Place Id:</label>
+                    </th>
+                    <td>
+                        <input type="text" name="location[place_id]" value="<?php echo $location['place_id']; ?>"
+                               placeholder=""/>
+                    </td>
+                </tr>
+                <tr class="form-field">
+                    <td colspan="2">
+                        <button type="button" onClick="alert('Feature not Complete');">
+                            <span>Fill Form With Google Place Info</span>
+                        </button>
+                    </td>
+                </tr>
+                <tr class="form-field form-required">
+                    <td colspan="2">
+                        <span name="blah"><i>Find Place ID at <a href="https://developers.google.com/places/place-id">this</a> location</i></span>
+                    </td>
+                </tr>
                 <tr class="form-field form-required">
                     <th scope="row">
                         <label for="location[name]">Location Name: <span class="description">(required)</span></label>
@@ -161,7 +182,8 @@ $inputClass = "";
                                     class="description">(required)</span></label>
                     </th>
                     <td>
-                        <input type="text" name="location[postal_code]" value="<?php echo $location['postal_code']; ?>" placeholder="68508"/>
+                        <input type="text" name="location[postal_code]" value="<?php echo $location['postal_code']; ?>"
+                               placeholder="68508"/>
                     </td>
                 </tr>
                 <tr class="form-field">
@@ -169,7 +191,8 @@ $inputClass = "";
                         <label for="location[latitude]">Latitude:</label>
                     </th>
                     <td>
-                        <input type="text" name="location[latitude]" value="<?php echo $location['latitude']; ?>" placeholder=""/>
+                        <input type="text" name="location[latitude]" value="<?php echo $location['latitude']; ?>"
+                               placeholder=""/>
                     </td>
                 </tr>
                 <tr class="form-field">
@@ -177,26 +200,18 @@ $inputClass = "";
                         <label for="location[longitude]">Longitude:</label>
                     </th>
                     <td>
-                        <input type="text" name="location[longitude]" value="<?php echo $location['longitude']; ?>" placeholder=""/>
+                        <input type="text" name="location[longitude]" value="<?php echo $location['longitude']; ?>"
+                               placeholder=""/>
                     </td>
                 </tr>
-                <tr class="form-field">
-                    <th scope="row">
-                        <label for="location[place_id]">Google Place Id:</label>
-                    </th>
-                    <td>
-                        <input type="text" name="location[place_id]" value="<?php echo $location['place_id']; ?>" placeholder=""/>
-                    </td>
-                </tr>
-                <tr class="form-field form-required">
-                    <td colspan="2">
-                        <span name="blah"><i>Find Place ID at <a href="https://developers.google.com/places/place-id">this</a> location</i></span>
-                    </td>
-                </tr>
+
                 <tr class="form-field form-required">
                     <td colspan="2">
                         <button value="Save Location" type="submit">Save Location</button>
-                        <button value="Cancel" type="button" onClick="window.location='<?php echo admin_url("admin.php?page=wp-location"); ?>'">Cancel</button>
+                        <button value="Cancel" type="button"
+                                onClick="window.location='<?php echo admin_url( "admin.php?page=wp-location" ); ?>'">
+                            Cancel
+                        </button>
                     </td>
                 </tr>
                 </tbody>

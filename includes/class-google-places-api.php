@@ -7,12 +7,27 @@
  * Time: 12:13 PM
  */
 class google_places_api {
-	public static $place_endpoint = "https://maps.googleapis.com/maps/api/place/details/json?";
-	public static $map_endpoint = "https://maps.googleapis.com/maps/api/place/details/json?";
-	protected static $version = "3.exp";
+	private static function get_apiKey() {
+		$key = get_option( 'googlemaps_api_key' );
+		return $key;
+	}
+
+	private static function get_endpoint() {
+		$url  = get_option( 'googlemaps_api_endpoint' );
+		if ( substr( $url, - 1 ) != "?" ) {
+      $url .= "?";
+		}
+
+		return $url;
+	}
+
+	public static function get_version() {
+		$version = get_option( 'googlemaps_api_version' );
+		return $version;
+	}
 
 	public static function include_js_script() {
-		wp_enqueue_script( 'google-maps-api', "https://maps.googleapis.com/maps/api/js?key=" . get_option('googlemaps_api_key'). "&v=" . self::$version );
+		wp_enqueue_script( 'google-maps-api', "https://maps.googleapis.com/maps/api/js?key=" . self::get_apiKey() . "&v=" . self::get_version() );
 	}
 
 	public static function geocode( $address ) {

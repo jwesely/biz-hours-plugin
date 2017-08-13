@@ -3,7 +3,7 @@
 Plugin Name: Business Hours Plugin
 Plugin URI: none
 Description: Use GooglePlaces to display information about your stores
-Version: 0.4 BETA
+Version: 1.0
 Author: StoneFin Technologies
 Author URI: https://www.stonefin.com
 */

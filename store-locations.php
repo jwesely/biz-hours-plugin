@@ -16,6 +16,7 @@ if ( ! class_exists( "google_places_api" ) ) {
 
 add_action( 'admin_post_wp_locations_save', 'wp_locations_save' );
 
+add_shortcode( 'wp_location_map', 'wp_location_map_shortcode' );
 add_shortcode( 'wp_location_hours', 'wp_location_hours_shortcode' );
 add_shortcode( 'wp_location_hours_long', 'wp_location_hours_long_shortcode' );
 add_shortcode( 'wp_location_hours_short', 'wp_location_hours_short_shortcode' );
@@ -210,6 +211,67 @@ function wp_location_geocode( $address ) {
   return google_places_api::geocode( $address );
 }
 
+function wp_location_map_shortcode( $atts = [] ) {
+  if ( empty( $atts ) ) {
+    return;
+  }
+  // include the google js script with apiKey
+  google_places_api::include_js_script();
+
+  // include the styling for this plugin
+  wp_enqueue_style( "wp-location-css", plugins_url( "wp-location/css/wp_location.css" ) );
+
+  $location = null;
+  if ( array_key_exists( "name", $atts ) ) {
+    // Load location by Name
+    $location = get_wp_location_by_name( $atts["name"] );
+  } elseif ( array_key_exists( "id", $atts ) ) {
+    // load location by Id
+    $location = get_wp_location_by_id( $atts['id'] );
+  } else {
+    // throw exception
+    return;
+  }
+
+  if ( empty( $location ) ) {
+    return;
+  }
+
+  $style = array_key_exists( "style", $atts ) ? $atts["style"] . ";" : "";
+  $class = array_key_exists( "class", $atts ) ? $atts["class"] . ";" : "";
+  ob_start();
+  try {
+    ?>
+      <h3><?php echo $location->name; ?></h3>
+      <span><?php echo wp_location_format_address( $location ); ?></span>
+      <div id="wp-location-map-<?php echo $location->id; ?>" class="wp-location-map <?php echo $class; ?>"
+           style="<?php echo $style; ?>"></div>
+      <script>
+        jQuery(document).ready(function () {
+          var loc = new google.maps.LatLng(<?php echo $location->latitude; ?>, <?php echo $location->longitude; ?>);
+          var map = new google.maps.Map(document.getElementById('wp-location-map-<?php echo $location->id; ?>'), {
+            zoom: 10,
+            center: loc
+          });
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+              initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+              map.setCenter(initialLocation);
+            });
+          }
+          var marker = new google.maps.Marker({
+            position: loc,
+            map: map
+          });
+        });
+      </script>
+    <?php
+    return ob_get_contents();
+  } finally {
+    // Make sure to end the output buffer that we started, reguardless of success or failure
+    ob_end_clean();
+  }
+}
 
 function wp_location_hours_shortcode( $atts = [] ) {
   if ( empty( $atts ) ) {

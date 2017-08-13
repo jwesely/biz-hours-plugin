@@ -10,6 +10,9 @@ if ( ! defined( "wpLocationTable" ) ) {
 if ( ! class_exists( "wp_location" ) ) {
   require_once "includes/class-wp-location.php";
 }
+if ( ! class_exists( "google_places_api" ) ) {
+  require_once( "includes/class-google-places-api.php" );
+}
 
 add_action( 'admin_post_wp_locations_save', 'wp_locations_save' );
 
@@ -54,6 +57,28 @@ function wp_locations_save() {
   if ( ! empty( $location ) ) {
     // disabling alt_id for now
     try {
+      $temp = null;
+      // Check for NULL Values, to see if we even need to run the Query
+      if ( empty( $location['longitude'] ) || empty( $location['latitude'] ) || empty( $location['place_id'] ) ) {
+        // try and get the Geometry from Google
+        $formatted = wp_location_format_address( $location );
+        $temp      = wp_location_geocode( $formatted );
+      }
+
+      // if we ran the query
+      if ( $temp != null ) {
+        // are our coordinates empty
+        if ( ( empty( $location['latitude'] ) || empty( $location['longitude'] ) ) ) {
+          $location['latitude']  = floatval( $temp['latitude'] );
+          $location['longitude'] = floatval( $temp['longitude'] );
+        }
+
+        // dont overwrite manually entered place_id
+        if ( empty( $location['place_id'] ) ) {
+          $location['place_id'] = ! empty( $temp['place_id'] ) ? $temp['place_id'] : null;
+        }
+      }
+
       if ( empty( $location['alt_ids'] ) ) {
         $location['alt_ids'] = null;
       }

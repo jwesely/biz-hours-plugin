@@ -1,5 +1,14 @@
 <div class="wrap">
-  <?php settings_errors(); ?>
+  <?php settings_errors();
+
+// notify the user of save success
+  if($_GET['saved_api_key']){
+    $class = 'notice notice-success';
+    $message = __( 'Successfully saved settings', 'sample-text-domain' );
+    printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
+    unset($_GET['saved_api_key']);
+  }
+  ?>
 
   <h1>Google API Settings</h1>
 

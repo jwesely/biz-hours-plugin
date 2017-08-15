@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: jwesely
- * Date: 1/4/2017
- * Time: 12:13 PM
- */
 
 class WP_Location {
 	public $id;

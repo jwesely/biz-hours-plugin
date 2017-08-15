@@ -25,4 +25,12 @@ class wp_location {
     public $postalCode;
     public $opening_hours;
 	public $permanently_closed;
+
+	public function get_location_by_id($id){
+	  $obj = new wp_location();
+	  $obj->id = $id;
+	  $location = get_post_meta($id, 'location', true);
+	  $obj = (object)((array)$location + (array)$obj);
+    return $obj;
+  }
 }

@@ -30,7 +30,10 @@ class WP_Location {
 	  $obj = new WP_Location();
 	  $obj->id = $id;
 	  $location = get_post_meta($id, 'location', true);
-	  $obj = (object)((array)$location + (array)$obj);
+	  if(empty($location)){
+	    return false;
+    }
+	  $obj = (object)((array)$location + (array)$obj); // merge location data into obj while giving location priority
     return $obj;
   }
 }

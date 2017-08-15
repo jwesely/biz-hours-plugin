@@ -174,6 +174,7 @@ function wp_location_save_notice__error() {
 
 }
 
+// Format address
 function wp_location_format_address( $location ) {
   $formatted = "";
   if ( is_array( $location ) ) {
@@ -255,6 +256,7 @@ function wp_location_map_shortcode( $atts = [] ) {
   }
 }
 
+// Shortcode to Output building hours
 function wp_location_hours_shortcode( $atts = [] ) {
   if ( empty( $atts ) ) {
     // no atts given
@@ -320,6 +322,7 @@ if ( array_key_exists( "id", $atts ) ) {
   return $html;
 }
 
+// Shortcode to Output condensed location hours
 function wp_location_hours_short_shortcode( $atts = [] ) {
   if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
     $atts["type"] = "short";
@@ -328,6 +331,7 @@ function wp_location_hours_short_shortcode( $atts = [] ) {
   }
 }
 
+// Shortcode to Output location hours without condensing hours that are the same
 function wp_location_hours_long_shortcode( $atts = [] ) {
   if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
     $atts["type"] = "long";
@@ -336,6 +340,7 @@ function wp_location_hours_long_shortcode( $atts = [] ) {
   }
 }
 
+// Shortcode to Output location hours for the current day
 function wp_location_hours_today_shortcode( $atts = [] ) {
   if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
     $atts["type"] = "today";
@@ -344,6 +349,7 @@ function wp_location_hours_today_shortcode( $atts = [] ) {
   }
 }
 
+// Output location hours without condensing hours that are the same
 function wp_location_hours_display_long( $hours, $class = "", $style = "" ) {
   if ( empty( $hours ) ) {
     return;
@@ -376,13 +382,14 @@ function wp_location_hours_display_long( $hours, $class = "", $style = "" ) {
   }
 }
 
+// Output condensed location hours
 function wp_location_hours_display_short( $hours, $class = "", $style = "" ) {
   if ( empty( $hours ) ) {
     return;
   }
 
   // group days by consistent hours
-  $condensed_text = google_places_api::condense_weekday_text( $hours );
+  $condensed_text = condense_weekday_text( $hours );
   ob_start();
   try {
     ?>
@@ -409,6 +416,7 @@ function wp_location_hours_display_short( $hours, $class = "", $style = "" ) {
   }
 }
 
+// Output location hours for the current day
 function wp_location_hours_display_today( $hours, $class = "", $style = "" ) {
   if ( empty( $hours ) ) {
     return;
@@ -433,4 +441,110 @@ function wp_location_hours_display_today( $hours, $class = "", $style = "" ) {
   } finally {
     ob_end_clean();
   }
+}
+
+// Condense Hours information So it doesn't duplicate as much
+function condense_weekday_text( $hours ) {
+  $day_conversion_table = array(
+    0 => "Sun",
+    1 => "Mon",
+    2 => "Tue",
+    3 => "Wed",
+    4 => "Thu",
+    5 => "Fri",
+    6 => "Sat"
+  );
+
+  $days_to_hours          = array();
+  $condensed_weekday_text = array();
+  foreach ( $hours->periods as $day => $business_hours ) {
+    foreach ( $business_hours as $type => $info ) {
+      $days_to_hours[ $info->day ][ $type ] = $info->time;
+    }
+  }
+
+  $timespans_to_days = array();
+
+  foreach ( $days_to_hours as $day => $times ) {
+    $matched = false;
+
+    foreach ( $timespans_to_days as $groupID => $grouping ) {
+      if ( sameSpan( $grouping, $times ) ) {
+        $timespans_to_days[ $groupID ]['days'][] = $day;
+        $matched                                 = true;
+
+        break;
+      }
+    }
+
+    if ( ! $matched ) {
+      $new                 = $times;
+      $new['days'][]       = $day;
+      $timespans_to_days[] = $new;
+    }
+  }
+
+  $day_to_group = array();
+
+  foreach ( $timespans_to_days as $groupingID => $group ) {
+    foreach ( $group['days'] as $key => $day ) {
+      $day_to_group[ $day ] = $groupingID;
+    }
+  }
+
+  $start_day       = false;
+  $end_day         = false;
+  $groupingID      = false;
+  $arraySize       = sizeof( $day_to_group );
+  $separate_sunday = false;
+  for ( $i = 1; $i < $arraySize; $i ++ ) {
+    if ( ! $start_day ) {
+      $start_day  = $i;
+      $groupingID = $day_to_group[ $start_day ];
+    }
+
+    if ( $i + 1 != $arraySize ) {
+      if ( $day_to_group[ $i + 1 ] != $groupingID ) {
+        $end_day = $i;
+      }
+    } else {
+      if ( $day_to_group[0] != $groupingID ) {
+        $end_day         = $i;
+        $separate_sunday = true;
+      } else {
+        $end_day = 0;
+      }
+    }
+
+    if ( $end_day ) {
+      // Print the sections
+      $time_string = date( "g:i A", strtotime( $timespans_to_days[ $groupingID ]['open'] ) ) . " - " . date( "g:i A", strtotime( $timespans_to_days[ $groupingID ]['close'] ) );
+      if ( $start_day == $end_day ) {
+        $date_string = $day_conversion_table[ $start_day ] . ": " . $time_string;
+      } else {
+        $date_string = $day_conversion_table[ $start_day ] . "-" . $day_conversion_table[ $end_day ] . ": " . $time_string;
+      }
+
+      $condensed_weekday_text[] = $date_string;
+
+      if ( $separate_sunday ) {
+        $sundayGroupID            = $day_to_group[0];
+        $sunday_time_string       = date( "g:i A", strtotime( $timespans_to_days[ $sundayGroupID ]['open'] ) ) . " - " . date( "g:i A", strtotime( $timespans_to_days[ $sundayGroupID ]['close'] ) );
+        $date_string              = $day_conversion_table[0] . ": " . $sunday_time_string;
+        $condensed_weekday_text[] = $date_string;
+      }
+
+      // Reset variables
+      $start_day  = false;
+      $end_day    = false;
+      $groupingID = false;
+    }
+  }
+
+  return $condensed_weekday_text;
+}
+
+// check if two spans are the same
+function sameSpan( $span1, $span2 ) {
+  return ( ( $span1['close'] === $span2['close'] ) && ( $span1['open'] === $span2['open'] ) );
 }

@@ -1,35 +1,29 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * User: jwesely
- * Date: 1/4/2017
- * Time: 12:13 PM
- */
+// Handle all interactions with the Google API
 class google_places_api {
+
+  // Retrieve API Key from options
 	private static function get_apiKey() {
 		$key = get_option( 'googlemaps_api_key' );
 		return $key;
 	}
 
-	private static function get_endpoint() {
-		$url  = get_option( 'googlemaps_api_endpoint' );
-		if ( substr( $url, - 1 ) != "?" ) {
-      $url .= "?";
-		}
-
-		return $url;
-	}
-
+	// Retrieve API version from options or default
 	public static function get_version() {
 		$version = get_option( 'googlemaps_api_version' );
 		return empty($version) ? '3' : $version;
 	}
 
+	// Enqueue Google Maps Script if not enqueued
 	public static function include_js_script() {
-		wp_enqueue_script( 'google-maps-api', "https://maps.googleapis.com/maps/api/js?key=" . self::get_apiKey() . "&v=" . self::get_version() );
+	  // We don't want this script loaded twice otherwise things will break
+	  if(!wp_script_is('google-maps-api')){
+      wp_enqueue_script( 'google-maps-api', "https://maps.googleapis.com/maps/api/js?key=" . self::get_apiKey() . "&v=" . self::get_version() );
+    }
 	}
 
+	// Retrieve geographic information about an address
 	public static function geocode( $address ) {
 		// url encode the address
 		$address = urlencode( $address );
@@ -69,10 +63,11 @@ class google_places_api {
 		return null;
 	}
 
+	// Get information about place hours from Google Places
 	public static function get_place_hours( $place_id ) {
 		$current_time = new DateTime( "now" );
 		$current_time->setTimezone( new DateTimeZone( 'America/Chicago' ) );
-		$json = wp_remote_get( self::$place_endpoint . 'placeid=' . $place_id . '&key=' . get_option('googlemaps_api_key') );
+		$json = wp_remote_get( 'https://maps.googleapis.com/maps/api/place/details/json?' . 'placeid=' . $place_id . '&key=' . self::get_apiKey() );
 
 		try {
 			$place_object = json_decode( $json['body'] );
@@ -82,109 +77,5 @@ class google_places_api {
 		} catch ( Exception $e ) {
 			return null;
 		}
-	}
-
-	public static function condense_weekday_text( $hours ) {
-		$day_conversion_table = array(
-			0 => "Sun",
-			1 => "Mon",
-			2 => "Tue",
-			3 => "Wed",
-			4 => "Thu",
-			5 => "Fri",
-			6 => "Sat"
-		);
-
-		$days_to_hours          = array();
-		$condensed_weekday_text = array();
-		foreach ( $hours->periods as $day => $business_hours ) {
-			foreach ( $business_hours as $type => $info ) {
-				$days_to_hours[ $info->day ][ $type ] = $info->time;
-			}
-		}
-
-		$timespans_to_days = array();
-
-		foreach ( $days_to_hours as $day => $times ) {
-			$matched = false;
-
-			foreach ( $timespans_to_days as $groupID => $grouping ) {
-				if ( self::sameSpan( $grouping, $times ) ) {
-					$timespans_to_days[ $groupID ]['days'][] = $day;
-					$matched                                 = true;
-
-					break;
-				}
-			}
-
-			if ( ! $matched ) {
-				$new                 = $times;
-				$new['days'][]       = $day;
-				$timespans_to_days[] = $new;
-			}
-		}
-
-		$day_to_group = array();
-
-		foreach ( $timespans_to_days as $groupingID => $group ) {
-			foreach ( $group['days'] as $key => $day ) {
-				$day_to_group[ $day ] = $groupingID;
-			}
-		}
-
-		$start_day       = false;
-		$end_day         = false;
-		$groupingID      = false;
-		$arraySize       = sizeof( $day_to_group );
-		$separate_sunday = false;
-		for ( $i = 1; $i < $arraySize; $i ++ ) {
-			if ( ! $start_day ) {
-				$start_day  = $i;
-				$groupingID = $day_to_group[ $start_day ];
-			}
-
-			if ( $i + 1 != $arraySize ) {
-				if ( $day_to_group[ $i + 1 ] != $groupingID ) {
-					$end_day = $i;
-				}
-			} else {
-				if ( $day_to_group[0] != $groupingID ) {
-					$end_day         = $i;
-					$separate_sunday = true;
-				} else {
-					$end_day = 0;
-				}
-			}
-
-			if ( $end_day ) {
-				// Print the sections
-				$time_string = date( "g:i A", strtotime( $timespans_to_days[ $groupingID ]['open'] ) ) . " - " . date( "g:i A", strtotime( $timespans_to_days[ $groupingID ]['close'] ) );
-				if ( $start_day == $end_day ) {
-					$date_string = $day_conversion_table[ $start_day ] . ": " . $time_string;
-				} else {
-					$date_string = $day_conversion_table[ $start_day ] . "-" . $day_conversion_table[ $end_day ] . ": " . $time_string;
-				}
-
-				$condensed_weekday_text[] = $date_string;
-
-				if ( $separate_sunday ) {
-					$sundayGroupID            = $day_to_group[0];
-					$sunday_time_string       = date( "g:i A", strtotime( $timespans_to_days[ $sundayGroupID ]['open'] ) ) . " - " . date( "g:i A", strtotime( $timespans_to_days[ $sundayGroupID ]['close'] ) );
-					$date_string              = $day_conversion_table[0] . ": " . $sunday_time_string;
-					$condensed_weekday_text[] = $date_string;
-				}
-
-				// Reset variables
-				$start_day  = false;
-				$end_day    = false;
-				$groupingID = false;
-			}
-		}
-
-		return $condensed_weekday_text;
-	}
-
-	protected static function sameSpan( $span1, $span2 ) {
-		return ( ( $span1['close'] === $span2['close'] ) && ( $span1['open'] === $span2['open'] ) );
 	}
 }

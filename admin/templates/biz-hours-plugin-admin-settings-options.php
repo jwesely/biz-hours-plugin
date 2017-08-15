@@ -21,8 +21,10 @@
         </th>
         <td>
           <input class="widefat" id="googlemaps_api_key" name="googlemaps_api_key" type="text" value="<?php echo get_option('googlemaps_api_key')?>"/>
+            <p>Don't have an API key? register to get one <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">here!</a></p>
         </td>
       </tr>
+
 <!--      <tr>-->
 <!--          <th scope="row">-->
 <!--              GoogleMaps Endpoint Url-->

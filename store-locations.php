@@ -172,6 +172,7 @@ function wp_location_save_notice__error() {
 
 }
 
+// Format address
 function wp_location_format_address( $location ) {
   $formatted = "";
   if ( is_array( $location ) ) {
@@ -194,7 +195,7 @@ function wp_location_geocode( $address ) {
   return google_places_api::geocode( $address );
 }
 
-
+// Shortcode to Output building hours
 function wp_location_hours_shortcode( $atts = [] ) {
   if ( empty( $atts ) ) {
     // no atts given
@@ -260,6 +261,7 @@ if ( array_key_exists( "id", $atts ) ) {
   return $html;
 }
 
+// Shortcode to Output condensed location hours
 function wp_location_hours_short_shortcode( $atts = [] ) {
   if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
     $atts["type"] = "short";
@@ -268,6 +270,7 @@ function wp_location_hours_short_shortcode( $atts = [] ) {
   }
 }
 
+// Shortcode to Output location hours without condensing hours that are the same
 function wp_location_hours_long_shortcode( $atts = [] ) {
   if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
     $atts["type"] = "long";
@@ -276,6 +279,7 @@ function wp_location_hours_long_shortcode( $atts = [] ) {
   }
 }
 
+// Shortcode to Output location hours for the current day
 function wp_location_hours_today_shortcode( $atts = [] ) {
   if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
     $atts["type"] = "today";
@@ -284,6 +288,7 @@ function wp_location_hours_today_shortcode( $atts = [] ) {
   }
 }
 
+// Output location hours without condensing hours that are the same
 function wp_location_hours_display_long( $hours, $class = "", $style = "" ) {
   if ( empty( $hours ) ) {
     return;
@@ -316,6 +321,7 @@ function wp_location_hours_display_long( $hours, $class = "", $style = "" ) {
   }
 }
 
+// Output condensed location hours
 function wp_location_hours_display_short( $hours, $class = "", $style = "" ) {
   if ( empty( $hours ) ) {
     return;
@@ -349,6 +355,7 @@ function wp_location_hours_display_short( $hours, $class = "", $style = "" ) {
   }
 }
 
+// Output location hours for the current day
 function wp_location_hours_display_today( $hours, $class = "", $style = "" ) {
   if ( empty( $hours ) ) {
     return;
@@ -476,6 +483,7 @@ function condense_weekday_text( $hours ) {
   return $condensed_weekday_text;
 }
 
+// check if two spans are the same
 function sameSpan( $span1, $span2 ) {
   return ( ( $span1['close'] === $span2['close'] ) && ( $span1['open'] === $span2['open'] ) );
 }

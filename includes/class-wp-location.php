@@ -6,7 +6,7 @@
  * Time: 12:13 PM
  */
 
-class wp_location {
+class WP_Location {
 	public $id;
     public $place_id;
     public $alt_ids;
@@ -25,4 +25,15 @@ class wp_location {
     public $postalCode;
     public $opening_hours;
 	public $permanently_closed;
+
+	public static function get_location_by_id($id){
+	  $obj = new WP_Location();
+	  $obj->id = $id;
+	  $location = get_post_meta($id, 'location', true);
+	  if(empty($location)){
+	    return false;
+    }
+	  $obj = (object)((array)$location + (array)$obj);
+    return $obj;
+  }
 }

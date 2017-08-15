@@ -13,5 +13,4 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 //store location functionality
 require_once ("store-locations.php");
-
 ?>

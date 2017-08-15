@@ -17,8 +17,9 @@ add_action( 'init', 'wp_location_custom_post_type' );
 add_action( 'save_post', 'wp_location_box_save' );
 add_action( 'admin_notices', 'wp_location_save_notice__error' );
 
-add_shortcode( 'wp_location_map', 'wp_location_map_shortcode' );
+
 // Keep shortcode calls grouped up here for easy viewing
+add_shortcode( 'wp_location_map', 'wp_location_map_shortcode' );
 add_shortcode( 'wp_location_hours', 'wp_location_hours_shortcode' );
 add_shortcode( 'wp_location_hours_long', 'wp_location_hours_long_shortcode' );
 add_shortcode( 'wp_location_hours_short', 'wp_location_hours_short_shortcode' );
@@ -206,14 +207,11 @@ function wp_location_map_shortcode( $atts = [] ) {
   wp_enqueue_style( "wp-location-css", plugins_url( "wp-location/css/wp_location.css" ) );
 
   $location = null;
-  if ( array_key_exists( "name", $atts ) ) {
-    // Load location by Name
-    $location = get_wp_location_by_name( $atts["name"] );
-  } elseif ( array_key_exists( "id", $atts ) ) {
+  if ( array_key_exists( "id", $atts ) ) {
     // load location by Id
-    $location = get_wp_location_by_id( $atts['id'] );
+    $location = WP_Location::get_location_by_id( $atts['id'] );
   } else {
-    // throw exception
+    // no atts given
     return;
   }
 

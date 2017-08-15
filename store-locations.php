@@ -197,6 +197,7 @@ function wp_location_geocode( $address ) {
   return google_places_api::geocode( $address );
 }
 
+// Create a map centered on given Location id
 function wp_location_map_shortcode( $atts = [] ) {
   if ( empty( $atts ) ) {
     return;
@@ -216,6 +217,7 @@ function wp_location_map_shortcode( $atts = [] ) {
     return;
   }
 
+  // return if there is no location to display information for
   if ( empty( $location ) ) {
     return;
   }

@@ -4,24 +4,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 add_action('admin_menu', 'biz_hours_plugin_settings_page');
-add_action('load-settings_page_biz-hours-plugin-options', 'biz_hours_plugin_settings_page_save_options' );
+add_action('load-wp-location_page_biz-hours-plugin-options', 'biz_hours_plugin_settings_page_save_options' );
 
-
+// add a Settings page beneath the Store Location custom Post type
 function biz_hours_plugin_settings_page(){
   add_submenu_page(
-    'options-general.php',
+    'edit.php?post_type=wp-location',
     'Biz Hours Plugin Settings',
-    'Biz Hours Plugin Settings',
+    'Settings',
     'manage_options',
     'biz-hours-plugin-options',
     'biz_hours_plugin_settings_page_render'
   );
 }
 
+// render the settings page
 function biz_hours_plugin_settings_page_render(){
   include 'templates/biz-hours-plugin-admin-settings-options.php';
 }
 
+// Save the settings page when it is submitted
 function biz_hours_plugin_settings_page_save_options(){
 
   $action = 'biz-hours-plugin-settings-page-save';
@@ -34,6 +36,7 @@ function biz_hours_plugin_settings_page_save_options(){
 
   if ( isset( $_POST['googlemaps_api_key'] ) ){
     update_option( 'googlemaps_api_key', $_POST['googlemaps_api_key'] );
+    $_GET['saved_api_key'] = true;
   }
 
   if ( isset( $_POST['googlemaps_api_endpoint'] ) ){
@@ -45,6 +48,7 @@ function biz_hours_plugin_settings_page_save_options(){
   }
 }
 
+// Check if user can save this
 function biz_hours_plugin_user_can_save( $action, $nonce ) {
   $is_nonce_set = isset( $_POST[$nonce] );
   $is_valid_nonce = false;

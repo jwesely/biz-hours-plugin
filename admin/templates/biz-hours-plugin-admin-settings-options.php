@@ -24,23 +24,6 @@
             <p>Don't have an API key? register to get one <a href="https://developers.google.com/maps/documentation/javascript/get-api-key" target="_blank">here!</a></p>
         </td>
       </tr>
-
-<!--      <tr>-->
-<!--          <th scope="row">-->
-<!--              GoogleMaps Endpoint Url-->
-<!--          </th>-->
-<!--          <td>-->
-<!--              <input class="widefat" id="googlemaps_api_endpoint" name="googlemaps_api_endpoint" type="text" value="--><?php //echo get_option('googlemaps_api_endpoint')?><!--"/>-->
-<!--          </td>-->
-<!--      </tr>-->
-<!--      <tr>-->
-<!--          <th scope="row">-->
-<!--              GoogleMaps API Version-->
-<!--          </th>-->
-<!--          <td>-->
-<!--              <input class="widefat" id="googlemaps_api_version" name="googlemaps_api_version" type="text" value="--><?php //echo get_option('googlemaps_api_version')?><!--"/>-->
-<!--          </td>-->
-<!--      </tr>-->
       </tbody>
     </table>
     <?php submit_button(); ?>

@@ -43,7 +43,7 @@ class google_places_api {
 			// get the important data
 			$lati              = $resp['results'][0]['geometry']['location']['lat'];
 			$longi             = $resp['results'][0]['geometry']['location']['lng'];
-			$place_id          = $resp['results'][0]['place_id'];
+			$place_id          = $resp['results'][0]['place_id']; // the current way doesn't handle sublocations very well and may not be the POI place id
 			$formatted_address = $resp['results'][0]['formatted_address'];
 
 			// verify if data is complete

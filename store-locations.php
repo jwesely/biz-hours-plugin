@@ -63,14 +63,14 @@ function wp_location_custom_post_type() {
 
 // Register a meta_box to hold custom fields
 function wp_location_fields(){
-  add_meta_box(
-    'wp_location_data_box',
-    __('Location Data', 'wp_location'),
-    'wp_location_box_content',
-    'wp-location',
-    'normal',
-    'high'
-  );
+    add_meta_box(
+            'wp_location_data_box',
+            __('Location Data', 'wp_location'),
+            'wp_location_box_content',
+            'wp-location', // In our case screen should be the same as the newly registered post_type
+            'normal',
+            'high'
+    );
 }
 
 // Provide content for the wp_location meta_box
@@ -80,9 +80,12 @@ function wp_location_box_content( $post ){
 
 // Handling wp-location post save
 function wp_location_box_save( $post_id ){
+
+  // Don't save anything if the user didn't save it
   if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE )
     return;
 
+  // Make sure the nonce is valid to help prevent malicious access
   if ( !wp_verify_nonce( $_POST['wp_location_box_content_nonce'], 'test9000' ))
     return;
 
@@ -94,32 +97,36 @@ function wp_location_box_save( $post_id ){
       return;
   }
 
-  $location = $_POST['location'];
+  $location = $_POST['location']; // get the data that was posted
 
   // We need these fields to be populated if we want to pull Google Places information from them
   if(empty($location['address1']) || empty($location['name']) || empty($location['city']) || empty($location['province']) || empty($location['postal_code']) ){
-    add_filter( 'redirect_post_location', 'add_notice_query_var', 99);
-    return;
+    add_filter( 'redirect_post_location', 'add_notice_query_var', 99); // que up a warning for missing fields but still let them update
+    $missing_required_fields = true;
   }
 
-  if ( empty( $location['longitude'] ) || empty( $location['latitude'] ) || empty( $location['place_id'] ) ) {
-    // try and get the Geometry from Google
-    $formatted = wp_location_format_address( $location );
-    $temp      = wp_location_geocode( $formatted );
-  }
-
-  if($temp != null){
-    // are our coordinates empty
-    if ( ( empty( $location['latitude'] ) || empty( $location['longitude'] ) ) ) {
-      $location['latitude']  = floatval( $temp['latitude'] );
-      $location['longitude'] = floatval( $temp['longitude'] );
+  // Lets only try to generate lat/long if we have the required fields
+  if(!isset($missing_required_fields)){
+    if ( empty( $location['longitude'] ) || empty( $location['latitude'] ) || empty( $location['place_id'] ) ) {
+      // try and get the Geometry from Google
+      $formatted = wp_location_format_address( $location );
+      $temp      = wp_location_geocode( $formatted );
     }
 
-    // dont overwrite manually entered place_id
-    if ( empty( $location['place_id'] ) ) {
-      $location['place_id'] = ! empty( $temp['place_id'] ) ? $temp['place_id'] : null;
+    if($temp != null){
+      // are our coordinates empty
+      if ( ( empty( $location['latitude'] ) || empty( $location['longitude'] ) ) ) {
+        $location['latitude']  = floatval( $temp['latitude'] );
+        $location['longitude'] = floatval( $temp['longitude'] );
+      }
+
+      // dont overwrite manually entered place_id
+      if ( empty( $location['place_id'] ) ) {
+        $location['place_id'] = ! empty( $temp['place_id'] ) ? $temp['place_id'] : null;
+      }
     }
   }
+
   update_post_meta( $post_id, 'location', $location );
 }
 
@@ -152,23 +159,23 @@ function wp_location_save_notice__error() {
   $class = 'notice notice-error';
 
   if($_GET['missing_address']){
-    $message = __( 'Please enter Address before saving', 'sample-text-domain' );
+    $message = __( 'Please enter Address', 'sample-text-domain' );
     printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
   }
   if($_GET['missing_name']){
-    $message = __( 'Please enter Location Name before saving', 'sample-text-domain' );
+    $message = __( 'Please enter Location', 'sample-text-domain' );
     printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
   }
   if($_GET['missing_city']){
-    $message = __( 'Please enter City before saving', 'sample-text-domain' );
+    $message = __( 'Please enter City', 'sample-text-domain' );
     printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
   }
   if($_GET['missing_province']){
-    $message = __( 'Please select a State before saving', 'sample-text-domain' );
+    $message = __( 'Please select a State', 'sample-text-domain' );
     printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
   }
   if($_GET['missing_postal_code']){
-    $message = __( 'Please enter a Postal Code before saving', 'sample-text-domain' );
+    $message = __( 'Please enter a Postal Code', 'sample-text-domain' );
     printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $message ) );
   }
 

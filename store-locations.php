@@ -185,12 +185,12 @@ function wp_location_save_notice__error() {
 function wp_location_format_address( $location ) {
   $formatted = "";
   if ( is_array( $location ) ) {
-    $formatted = $location['address1'] . " " . $location['address2'] . ", " . $location['city'] . " " . $location['province'] . " " . $location['postal_code'];
+    $formatted = $location['name']. " " .$location['address1'] . " " . $location['address2'] . ", " . $location['city'] . " " . $location['province'] . " " . $location['postal_code'];
     if ( ! empty( $location['country'] ) ) {
       $formatted .= ", " . $location['country'];
     }
   } elseif ( is_object( $location ) ) {
-    $formatted = $location->address1 . " " . $location->address2 . ", " . $location->city . " " . $location->province . " " . $location->postal_code;
+    $formatted = $location->name. " " .$location->address1 . " " . $location->address2 . ", " . $location->city . " " . $location->province . " " . $location->postal_code;
     if ( ! empty( $location->country ) ) {
       $formatted .= ", " . $location->country;
     }

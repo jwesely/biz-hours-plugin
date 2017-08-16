@@ -97,26 +97,31 @@ function wp_location_box_save( $post_id ){
   // We need these fields to be populated if we want to pull Google Places information from them
   if(empty($location['address1']) || empty($location['name']) || empty($location['city']) || empty($location['province']) || empty($location['postal_code']) ){
     add_filter( 'redirect_post_location', 'add_notice_query_var', 99); // que up a warning for missing fields but still let them update
+    $missing_required_fields = true;
   }
 
-  if ( empty( $location['longitude'] ) || empty( $location['latitude'] ) || empty( $location['place_id'] ) ) {
-    // try and get the Geometry from Google
-    $formatted = wp_location_format_address( $location );
-    $temp      = wp_location_geocode( $formatted );
-  }
-
-  if($temp != null){
-    // are our coordinates empty
-    if ( ( empty( $location['latitude'] ) || empty( $location['longitude'] ) ) ) {
-      $location['latitude']  = floatval( $temp['latitude'] );
-      $location['longitude'] = floatval( $temp['longitude'] );
+  // Lets only try to generate lat/long if we have the required fields
+  if(!isset($missing_required_fields)){
+    if ( empty( $location['longitude'] ) || empty( $location['latitude'] ) || empty( $location['place_id'] ) ) {
+      // try and get the Geometry from Google
+      $formatted = wp_location_format_address( $location );
+      $temp      = wp_location_geocode( $formatted );
     }
 
-    // dont overwrite manually entered place_id
-    if ( empty( $location['place_id'] ) ) {
-      $location['place_id'] = ! empty( $temp['place_id'] ) ? $temp['place_id'] : null;
+    if($temp != null){
+      // are our coordinates empty
+      if ( ( empty( $location['latitude'] ) || empty( $location['longitude'] ) ) ) {
+        $location['latitude']  = floatval( $temp['latitude'] );
+        $location['longitude'] = floatval( $temp['longitude'] );
+      }
+
+      // dont overwrite manually entered place_id
+      if ( empty( $location['place_id'] ) ) {
+        $location['place_id'] = ! empty( $temp['place_id'] ) ? $temp['place_id'] : null;
+      }
     }
   }
+
   update_post_meta( $post_id, 'location', $location );
 }
 

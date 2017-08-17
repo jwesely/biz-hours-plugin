@@ -205,355 +205,141 @@ function wp_location_geocode( $address ) {
 }
 
 // Create a map centered on given Location id
+// calling this multiple times on the same page will work but info window functions may not work as expected
 function wp_location_map_shortcode( $atts = [] ) {
   if ( empty( $atts ) ) {
-    return;
+    $atts = array();
   }
   // include the google js script with apiKey
   google_places_api::include_js_script();
 
   // include the styling for this plugin
-  wp_enqueue_style( "wp-location-css", plugins_url( "wp-location/css/wp_location.css" ) );
+  wp_enqueue_style( "wp-location-css", plugins_url( "css/wp_location.css", __FILE__ ) );
 
-  $location = null;
+  $location = array();
   if ( array_key_exists( "id", $atts ) ) {
     // load location by Id
-    $location = WP_Location::get_location_by_id( $atts['id'] );
+    $new_location = WP_Location::get_location_by_id( $atts['id'] );
+    $new_location->fetch_place_hours();
+
+    $locations[] = $new_location;
+
   } else {
-    // no atts given
-    return;
+    // load all locations
+    $post_ids = get_posts(array('post_type' => 'wp-location', 'post_status' => 'publish', 'fields' => 'ids'));
+    foreach ($post_ids as $post_id){
+
+      $new_location = WP_Location::get_location_by_id($post_id);
+      $new_location->fetch_place_hours();
+
+      $locations[] = $new_location;
+
+    }
   }
 
   // return if there is no location to display information for
-  if ( empty( $location ) ) {
+  if ( empty( $locations ) ) {
     return;
   }
 
   $style = array_key_exists( "style", $atts ) ? $atts["style"] . ";" : "";
   $class = array_key_exists( "class", $atts ) ? $atts["class"] . ";" : "";
-  ob_start();
-  try {
-    ?>
-      <h3><?php echo $location->name; ?></h3>
-      <span><?php echo wp_location_format_address( $location ); ?></span>
-      <div id="wp-location-map-<?php echo $location->id; ?>" class="wp-location-map <?php echo $class; ?>"
-           style="<?php echo $style; ?>"></div>
-      <script>
-        jQuery(document).ready(function () {
-          var loc = new google.maps.LatLng(<?php echo $location->latitude; ?>, <?php echo $location->longitude; ?>);
-          var map = new google.maps.Map(document.getElementById('wp-location-map-<?php echo $location->id; ?>'), {
-            zoom: 10,
-            center: loc
-          });
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function (position) {
-              initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-              map.setCenter(initialLocation);
-            });
-          }
-          var marker = new google.maps.Marker({
-            position: loc,
-            map: map
-          });
-        });
-      </script>
-    <?php
-    return ob_get_contents();
-  } finally {
-    // Make sure to end the output buffer that we started, reguardless of success or failure
-    ob_end_clean();
+
+  //include map js
+  if(!wp_script_is('wp-location-map')) {
+    wp_enqueue_script( 'wp-location-map', plugins_url( "js/wp_location_map.js", __FILE__ ), array( 'jquery' ) );
   }
+
+  include('templates/template-locations-map.php');
 }
 
 // Shortcode to Output building hours
 function wp_location_hours_shortcode( $atts = [] ) {
-  if ( empty( $atts ) ) {
-    // no atts given
-    return;
-  }
-
-  // include the styling for this plugin
-  wp_enqueue_style( "wp-location-css", plugins_url( "wp-location/css/wp_location.css" ) );
-
-  $location = null;
-if ( array_key_exists( "id", $atts ) ) {
-    // load location by Id
-    $location = WP_Location::get_location_by_id( $atts['id'] );
-  } else {
-    // no atts given
-    return;
-  }
-
-  if ( empty( $location ) || empty( $location->place_id ) ) {
-    return;
-  }
-
+    if(empty($atts)){
+        $atts = array();
+    }
   $defaulted_atts = shortcode_atts( array(
     "type"  => "long",
     "style" => "",
     "class" => ""
   ), $atts );
 
+  // include the styling for this plugin
+  wp_enqueue_style( "wp-location-css", plugins_url( "css/wp_location.css", __FILE__ ) );
+
+  $locations = array();
+if ( array_key_exists( "id", $atts ) ) {
+    // load location by Id
+    $new_location = WP_Location::get_location_by_id( $atts['id'] );
+    $new_location->fetch_place_hours();
+
+      $locations[] = $new_location;
+
+  } else {
+  // load all locations
+  $post_ids = get_posts(array('post_type' => 'wp-location', 'post_status' => 'publish', 'fields' => 'ids'));
+  foreach ($post_ids as $post_id){
+
+    $new_location = WP_Location::get_location_by_id($post_id);
+    $new_location->fetch_place_hours();
+
+      $locations[] = $new_location;
+
+  }
+}
+
+  if ( empty( $locations )) {
+    return;
+  }
+
   $style = $defaulted_atts["style"];
   $class = $defaulted_atts["class"];
-
-
-  $hours = google_places_api::get_place_hours( $location->place_id );
-  if ( empty( $hours ) ) {
-    ob_start();
-    try {
-      ?>
-        <div class="wp-location-hours-container">
-            <div class="wp-location-hours-status">
-                <p>Failed to Load Open Hours for Location</p>
-            </div>
-        </div>
-      <?php
-      return ob_get_contents();
-    } finally {
-      ob_end_clean();
-    }
-  }
 
   $html = "";
   switch ( $defaulted_atts['type'] ) {
     case 'long':
-      $html = wp_location_hours_display_long( $hours, $class, $style );
+      $html = include( 'templates/template-location-hours-long.php' );
       break;
     case 'short':
-      $html = wp_location_hours_display_short( $hours, $class, $style );
+      $html = include( 'templates/template-location-hours-short.php' );
       break;
     case 'today':
-      $html = wp_location_hours_display_today( $hours, $class, $style );
+      $html = include( 'templates/template-location-hours-today.php' );
       break;
   }
-
-  return $html;
 }
 
 // Shortcode to Output condensed location hours
 function wp_location_hours_short_shortcode( $atts = [] ) {
-  if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
+    if(empty($atts)){
+        $atts = array();
+    }
+
     $atts["type"] = "short";
 
     return wp_location_hours_shortcode( $atts );
-  }
 }
 
 // Shortcode to Output location hours without condensing hours that are the same
 function wp_location_hours_long_shortcode( $atts = [] ) {
-  if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
+  if(empty($atts)){
+    $atts = array();
+  }
     $atts["type"] = "long";
 
     return wp_location_hours_shortcode( $atts );
-  }
+
 }
 
 // Shortcode to Output location hours for the current day
 function wp_location_hours_today_shortcode( $atts = [] ) {
-  if ( array_key_exists( "name", $atts ) || array_key_exists( "id", $atts ) ) {
+  if(empty($atts)){
+    $atts = array();
+  }
     $atts["type"] = "today";
 
     return wp_location_hours_shortcode( $atts );
-  }
+
 }
 
-// Output location hours without condensing hours that are the same
-function wp_location_hours_display_long( $hours, $class = "", $style = "" ) {
-  if ( empty( $hours ) ) {
-    return;
-  }
 
-  ob_start();
-  try {
-    ?>
-      <div class="wp-location-hours-container <?php echo $class; ?>" style="<?php echo $style; ?>">
-          <div class="wp-location-hours-status">
-              <p>Doors are: <?php echo( $hours->open_now ? "Open" : "Closed" ); ?></p>
-          </div>
-          <div class='wp-location-hours-table'>
-            <?php
-            foreach ( $hours->weekday_text as $key => $value ) {
-              ?>
-                <div class="wp-location-hours-table-row">
-                    <span class="wp-location-hours-table-column"><?php echo $value; ?></span>
-                </div>
-              <?php
-            }
-            ?>
-          </div>
-      </div>
-    <?php
-    return ob_get_contents();
-  } finally {
-    // no matter what, make sure to kill the output buffering that we started
-    ob_end_clean();
-  }
-}
-
-// Output condensed location hours
-function wp_location_hours_display_short( $hours, $class = "", $style = "" ) {
-  if ( empty( $hours ) ) {
-    return;
-  }
-
-  // group days by consistent hours
-  $condensed_text = condense_weekday_text( $hours );
-  ob_start();
-  try {
-    ?>
-      <div class="wp-location-hours-container <?php echo $class; ?>" style="<?php echo $style; ?>">
-          <div class="wp-location-hours-status">
-              <p>Doors are: <?php echo( $hours->open_now ? "Open" : "Closed" ); ?></p>
-          </div>
-          <div class='wp-location-hours-table'>
-            <?php
-            foreach ( $condensed_text as $value ) {
-              ?>
-                <div class="wp-location-hours-table-row">
-                    <span class="wp-location-hours-table-column"><?php echo $value; ?></span>
-                </div>
-              <?php
-            }
-            ?>
-          </div>
-      </div>
-    <?php
-    return ob_get_contents();
-  } finally {
-    ob_end_clean();
-  }
-}
-
-// Output location hours for the current day
-function wp_location_hours_display_today( $hours, $class = "", $style = "" ) {
-  if ( empty( $hours ) ) {
-    return;
-  }
-  // because googlePlaces API doesn't understand how to make things the same...
-  $day_conversion_table = array( 0 => 5, 1 => 0, 2 => 1, 3 => 2, 4 => 3, 5 => 4, 6 => 6 );
-  ob_start();
-  try {
-    ?>
-      <div class="wp-location-hours-container <?php echo $class; ?>" style="<?php echo $style; ?>">
-          <div class="wp-location-hours-status">
-              <p>Doors are: <?php echo( $hours->open_now ? "Open" : "Closed" ); ?></p>
-          </div>
-          <div class='wp-location-hours-table'>
-              <div class="wp-location-hours-table-row">
-                  <span class="wp-location-hours-table-column"><?php echo $hours->weekday_text[ $day_conversion_table[ date( 'w' ) ] ] ?></span>
-              </div>
-          </div>
-      </div>
-    <?php
-    return ob_get_contents();
-  } finally {
-    ob_end_clean();
-  }
-}
-
-// Condense Hours information So it doesn't duplicate as much
-function condense_weekday_text( $hours ) {
-  $day_conversion_table = array(
-    0 => "Sun",
-    1 => "Mon",
-    2 => "Tue",
-    3 => "Wed",
-    4 => "Thu",
-    5 => "Fri",
-    6 => "Sat"
-  );
-
-  $days_to_hours          = array();
-  $condensed_weekday_text = array();
-  foreach ( $hours->periods as $day => $business_hours ) {
-    foreach ( $business_hours as $type => $info ) {
-      $days_to_hours[ $info->day ][ $type ] = $info->time;
-    }
-  }
-
-  $timespans_to_days = array();
-
-  foreach ( $days_to_hours as $day => $times ) {
-    $matched = false;
-
-    foreach ( $timespans_to_days as $groupID => $grouping ) {
-      if ( sameSpan( $grouping, $times ) ) {
-        $timespans_to_days[ $groupID ]['days'][] = $day;
-        $matched                                 = true;
-
-        break;
-      }
-    }
-
-    if ( ! $matched ) {
-      $new                 = $times;
-      $new['days'][]       = $day;
-      $timespans_to_days[] = $new;
-    }
-  }
-
-  $day_to_group = array();
-
-  foreach ( $timespans_to_days as $groupingID => $group ) {
-    foreach ( $group['days'] as $key => $day ) {
-      $day_to_group[ $day ] = $groupingID;
-    }
-  }
-
-  $start_day       = false;
-  $end_day         = false;
-  $groupingID      = false;
-  $arraySize       = sizeof( $day_to_group );
-  $separate_sunday = false;
-  for ( $i = 1; $i < $arraySize; $i ++ ) {
-    if ( ! $start_day ) {
-      $start_day  = $i;
-      $groupingID = $day_to_group[ $start_day ];
-    }
-
-    if ( $i + 1 != $arraySize ) {
-      if ( $day_to_group[ $i + 1 ] != $groupingID ) {
-        $end_day = $i;
-      }
-    } else {
-      if ( $day_to_group[0] != $groupingID ) {
-        $end_day         = $i;
-        $separate_sunday = true;
-      } else {
-        $end_day = 0;
-      }
-    }
-
-    if ( $end_day ) {
-      // Print the sections
-      $time_string = date( "g:i A", strtotime( $timespans_to_days[ $groupingID ]['open'] ) ) . " - " . date( "g:i A", strtotime( $timespans_to_days[ $groupingID ]['close'] ) );
-      if ( $start_day == $end_day ) {
-        $date_string = $day_conversion_table[ $start_day ] . ": " . $time_string;
-      } else {
-        $date_string = $day_conversion_table[ $start_day ] . "-" . $day_conversion_table[ $end_day ] . ": " . $time_string;
-      }
-
-      $condensed_weekday_text[] = $date_string;
-
-      if ( $separate_sunday ) {
-        $sundayGroupID            = $day_to_group[0];
-        $sunday_time_string       = date( "g:i A", strtotime( $timespans_to_days[ $sundayGroupID ]['open'] ) ) . " - " . date( "g:i A", strtotime( $timespans_to_days[ $sundayGroupID ]['close'] ) );
-        $date_string              = $day_conversion_table[0] . ": " . $sunday_time_string;
-        $condensed_weekday_text[] = $date_string;
-      }
-
-      // Reset variables
-      $start_day  = false;
-      $end_day    = false;
-      $groupingID = false;
-    }
-  }
-
-  return $condensed_weekday_text;
-}
-
-// check if two spans are the same
-function sameSpan( $span1, $span2 ) {
-  return ( ( $span1['close'] === $span2['close'] ) && ( $span1['open'] === $span2['open'] ) );
-}

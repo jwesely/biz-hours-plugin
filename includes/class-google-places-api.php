@@ -75,7 +75,7 @@ class google_places_api {
 
 			return $place_object->result->opening_hours;
 		} catch ( Exception $e ) {
-			return null;
+			return false;
 		}
 	}
 }
